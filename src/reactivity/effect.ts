@@ -19,7 +19,7 @@ class ReactiveEffect {
   }
   stop() {
     if(this.active) {
-      
+
       clearupEffect(this);
       if(this.onStop) {
         this.onStop()
