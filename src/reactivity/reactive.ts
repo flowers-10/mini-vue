@@ -20,3 +20,17 @@ export const reactive = (raw) => {
 
     })
 }
+
+export const readonly = (raw) => {
+    return new Proxy(raw,{
+        get(target,key,receiver) {
+            const res =  Reflect.get(target,key,receiver)
+            return res
+
+        },
+        set(target,key,value,receiver) {
+            return true
+        },
+
+    })
+}
