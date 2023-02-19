@@ -1,13 +1,22 @@
 import { track, trigger } from "./effect"
+import { ReactiveFlags } from "./reactive"
 
 const get = createGetter()
 const set = createSetter()
-const readonlyGet = createGetter(false)
+const readonlyGet = createGetter(true)
 
-function createGetter(isReadonly = true) {
+function createGetter(isReadonly = false) {
   return function get(target, key) {
+    if (key === ReactiveFlags.IS_REACTIVE) {
+      //get捕获器就返回true告诉调用者这是一个reactive对象
+      return !isReadonly
+    } else if (key === ReactiveFlags.IS_READONLY) {
+      // 同理返回isReadonly证明是readonly
+      return isReadonly
+    }
+
     const res = Reflect.get(target, key)
-    if (isReadonly) {
+    if (!isReadonly) {
       track(target, key)
     }
     return res
@@ -30,7 +39,7 @@ export const mutableHandlers = {
 export const readonlyHandlers = {
   get: readonlyGet,
   set(target, key, value, receiver) {
-    console.warn(`key:${key} set失败，因为target是readonly的`,target)
+    console.warn(`key:${key} set失败，因为target是readonly的`, target)
     return true
   },
 }
