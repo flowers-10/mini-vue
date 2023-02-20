@@ -27,10 +27,9 @@ describe("effect", () => {
 
     expect(age2).toBe(11);
 
-    //对于深层嵌套的对象由于没有封装递归的逻辑所以监听不到
+    //封装递归后就能监听到了
     user.newObj.objAge++;
-    //理论上来说应该变成12，而结果却没有变化
-    expect(age2).toBe(11);
+    expect(age2).toBe(12);
   });
 
   it("should return runner when call effect", () => {
