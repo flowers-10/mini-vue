@@ -1,7 +1,7 @@
-import { extend } from "../shared/extend";
+import { extend } from "../shared";
 
-let activeEffect; //暂存传进的ReactiveEffect实例
-let shouldTrack;
+export let activeEffect; //暂存传进的ReactiveEffect实例
+export let shouldTrack;
 const targetMap = new WeakMap(); //管理所有收集到的依赖，统一存取
 
 class ReactiveEffect {
@@ -70,10 +70,15 @@ export function track(target, key) {
       dep = new Set();
       depsMap.set(key, dep);
     }
-    dep.add(activeEffect);
-    //浅拷贝反向收集到dep
-    activeEffect.deps.push(dep);
+    trackEffects(dep)
   }
+}
+
+export function trackEffects(dep) {
+  if(dep.has(activeEffect)) return
+  dep.add(activeEffect);
+  //浅拷贝反向收集到dep
+  activeEffect.deps.push(dep);
 }
 
 //依赖触发
@@ -81,6 +86,9 @@ export function trigger(target, key) {
   let depsMap = targetMap.get(target);
   //用stop时所有的dep都被删了
   let dep = depsMap.get(key);
+  triggerEffects(dep)
+}
+export function triggerEffects(dep) {
   for (let effect of dep) {
     // 当触发set时，如果有scheduler就执行scheduler
     if (effect.scheduler) {
@@ -91,6 +99,7 @@ export function trigger(target, key) {
     }
   }
 }
+
 
 //响应式函数
 export const effect = (fn, options: any = {}) => {
