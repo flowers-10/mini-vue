@@ -1,12 +1,13 @@
 import { hasChanged, isObject } from "../shared"
 import { trackEffects, triggerEffects, activeEffect, shouldTrack } from "./effect"
-import { reactive } from "./reactive"
+import { isReactive, reactive } from "./reactive"
 
 
 class RefImpl {
   private _value: any
   public dep
   private _rawValue:any
+  public __v_isRef =true
   constructor(value) {
     this._rawValue = value
     this._value = convert(value) 
@@ -40,4 +41,32 @@ function trackRefValue(ref) {
 
 export function ref(value) {
   return new RefImpl(value)
+}
+
+export function isRef(ref) {
+  return !! ref.__v_isRef
+}
+
+export function unRef(ref) {
+  return isRef(ref) ? ref.value : ref
+}
+
+export function proxyRefs(objectWithRefs) {
+  return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs,{
+    get(target,key) {
+      // get 如果是ref类型那么就返回.value的值
+      // 如果是普通的值直接返回
+      return unRef(Reflect.get(target,key))
+    },
+    set(target,key,value) {
+      // 判断旧值是不是ref，新值是ref还是普通类型
+      if(isRef(target[key]) && !isRef(value)) {
+        // 普通类型就替换成普通类型
+        return target[key].value = value
+      }else {
+        // 是ref就返回.value的值
+        return Reflect.set(target,key,value)
+      }
+    }
+  })
 }
