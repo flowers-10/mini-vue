@@ -4,10 +4,10 @@ import { isReactive, reactive } from "./reactive"
 
 
 class RefImpl {
-  private _value: any
-  public dep
-  private _rawValue:any
-  public __v_isRef =true
+  private _value: any //保存传入的值并判断是否对象，对象就reactive
+  public dep //收集依赖
+  private _rawValue:any //保存每次传入的值
+  public __v_isRef =true //判断是否时ref的开关
   constructor(value) {
     this._rawValue = value
     this._value = convert(value) 
@@ -31,8 +31,10 @@ function convert(value) {
   return isObject(value) ? reactive(value) : value
 }
 
+// 在get操作时有效控制依赖收集
 function trackRefValue(ref) {
   if (activeEffect && shouldTrack) {
+    // 把dep传入，开始依赖收集
     trackEffects(ref.dep)
   }
 }
@@ -43,6 +45,7 @@ export function ref(value) {
   return new RefImpl(value)
 }
 
+// 根据对象中是否存在__v_isRef判断是否是个ref的对象，因为普通对象没有这个属性，只有ref创建时才会给对象里加入这个属性
 export function isRef(ref) {
   return !! ref.__v_isRef
 }
