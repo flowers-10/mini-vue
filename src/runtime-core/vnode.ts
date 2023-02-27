@@ -1,4 +1,4 @@
-export function creatVnode(type,props?,children?) {
+export function createVnode(type,props?,children?) {
   const vnode = {
     type,
     props,

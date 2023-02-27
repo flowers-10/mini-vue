@@ -1,16 +1,16 @@
-import {creatVnode} from './vnode'
-import { render} from './renderer'
+import { createVnode } from './vnode'
+import { render } from './renderer'
 
 
-export function creatApp(rootComponent) {
+export function createApp(rootComponent) {
   return {
     mount(rootContainer) {
       // 先转换成vnode
       // Component转换成vnode
       // 所有逻辑操作都基于vnode
 
-      const vnode = creatVnode(rootComponent)
-      render(vnode,rootContainer)
+      const vnode = createVnode(rootComponent)
+      render(vnode, rootContainer)
     }
   }
 }
