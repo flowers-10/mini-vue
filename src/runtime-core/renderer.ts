@@ -1,4 +1,3 @@
-import { isObject } from "../shared";
 import { ShapFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component"
 

@@ -1,11 +1,15 @@
-import { h } from "../../lib/guide-mini-vue.esm";
+import { h } from "../../lib/guide-mini-vue.esm.js";
 
 export const Foo = {
   setup(props) {
     // props包含count
     console.log(props);
+    // 3.
+    // readonly
+    props.count++;
+    console.log(props);
   },
   render() {
-    return h("div",{},"foo:" + this.count)
-  }
-}
+    return h("div", {}, "foo: " + this.count);
+  },
+};
