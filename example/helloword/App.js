@@ -7,7 +7,16 @@ export const App = {
     window.self = this
     return h(
       "div",
-      { id: "root", class: ["red", "hard"] },
+      { 
+        id: "root", 
+        class: ["red", "hard"],
+        onClick:() => {
+          console.log('click');
+        },
+        onMouseleave() {
+          console.log('mouse leave');
+        }
+     },
       // setupState
       // this.$el -> get root element
       "hi," + this.msg
