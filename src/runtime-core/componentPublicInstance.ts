@@ -1,7 +1,9 @@
 import {hasOwn} from '../shared'
 
 const publicPropertiesMap = {
-  $el: (i) => i.vnode.el
+  $el: (i) => i.vnode.el,
+  // 实现插槽
+  $slots:(i) => i.slots,
 }
 
 

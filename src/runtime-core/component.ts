@@ -2,6 +2,7 @@ import { PublicInstanceProxyHandlers } from "./componentPublicInstance"
 import { initProps } from "./componentProps"
 import { shallowReadonly } from "../reactivity/reactive"
 import {emit} from './componentEmit'
+import { initSlots } from "./componentSlots"
 
 export function createComponentInstance(vnode) {
   // 初始化组价
@@ -10,6 +11,7 @@ export function createComponentInstance(vnode) {
     type: vnode.type,
     setupState: {},
     props: {},
+    $slots:{},
     emit: (evnet) => {}
   }
   // 用户只要传事件名即可，bind已经把实例绑定到内部去调用了
@@ -21,8 +23,8 @@ export function createComponentInstance(vnode) {
 export function setupComponent(instance) {
   // TODO
   initProps(instance,instance.vnode.props)
-  // initSlots()
-
+  // 初始化插槽
+  initSlots(instance,instance.vnode.children)
   setupStatefulComponent(instance)
 
 
