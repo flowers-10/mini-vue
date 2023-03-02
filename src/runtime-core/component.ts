@@ -1,14 +1,20 @@
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance"
 import { initProps } from "./componentProps"
 import { shallowReadonly } from "../reactivity/reactive"
+import {emit} from './componentEmit'
 
 export function createComponentInstance(vnode) {
+  // 初始化组价
   const component = {
     vnode,
     type: vnode.type,
     setupState: {},
-    props: {}
+    props: {},
+    emit: (evnet) => {}
   }
+  // 用户只要传事件名即可，bind已经把实例绑定到内部去调用了
+  component.emit = emit.bind(null,component)
+
   return component
 }
 
@@ -31,7 +37,9 @@ function setupStatefulComponent(instance) {
 
   if (setup) {
     
-    const setupResult = setup(shallowReadonly(instance.props))
+    const setupResult = setup(shallowReadonly(instance.props),{
+      emit:instance.emit,
+    })
 
     handleSetupResult(instance, setupResult)
   }

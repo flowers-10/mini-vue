@@ -3,6 +3,7 @@ import { render } from './renderer'
 
 
 export function createApp(rootComponent) {
+  // debugger
   return {
     mount(rootContainer) {
       // 先转换成vnode
