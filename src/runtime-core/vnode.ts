@@ -1,4 +1,4 @@
-import { ShapFlags } from '../shared/ShapeFlags'
+import { ShapeFlags } from '../shared/ShapeFlags'
 
 export function createVnode(type, props?, children?) {
   const vnode = {
@@ -9,17 +9,21 @@ export function createVnode(type, props?, children?) {
     el: null
   }
 
-
-  // debugger
   // children
   if (typeof children === 'string') {
-    vnode.shapeFlag |= ShapFlags.TEXT_CHILDREN
+    vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN
   }else if(Array.isArray(children)) {
-    vnode.shapeFlag |=  ShapFlags.ARRAY_CHILDREN
+    vnode.shapeFlag |=  ShapeFlags.ARRAY_CHILDREN
+  }
+
+  if(vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    if(typeof children === "object") {
+      vnode.shapeFlag |= ShapeFlags.SOLT_CHILDREN
+    }
   }
   return vnode
 }
 
 function getShapFlag(type) {
-  return typeof type === 'string' ? ShapFlags.ELEMENT : ShapFlags.STATEFUL_COMPONENT
+  return typeof type === 'string' ? ShapeFlags.ELEMENT : ShapeFlags.STATEFUL_COMPONENT
 }

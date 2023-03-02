@@ -11,7 +11,7 @@ export function createComponentInstance(vnode) {
     type: vnode.type,
     setupState: {},
     props: {},
-    $slots:{},
+    slots:{},
     emit: (evnet) => {}
   }
   // 用户只要传事件名即可，bind已经把实例绑定到内部去调用了

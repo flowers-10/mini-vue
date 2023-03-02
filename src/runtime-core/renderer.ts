@@ -1,4 +1,4 @@
-import { ShapFlags } from "../shared/ShapeFlags";
+import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component"
 
 
@@ -9,9 +9,9 @@ export function render(vnode, container) {
 
 function patch(vnode, container) {
   const { shapeFlag } = vnode
-  if (shapeFlag & ShapFlags.ELEMENT) {
+  if (shapeFlag & ShapeFlags.ELEMENT) {
     processElement(vnode, container)
-  } else if (shapeFlag & ShapFlags.STATEFUL_COMPONENT) {
+  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     processComponent(vnode, container)
   }
 }
@@ -26,9 +26,9 @@ function mountElement(vnode, container) {
   const el = (vnode.el = document.createElement(vnode.type))
   // string or array
   const { children, shapeFlag } = vnode
-  if (shapeFlag & ShapFlags.TEXT_CHILDREN) {
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children
-  } else if (shapeFlag & ShapFlags.ARRAY_CHILDREN) {
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     // vnode
     mountChildren(children, el)
   }

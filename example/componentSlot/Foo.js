@@ -17,9 +17,9 @@ export const Foo = {
     // 1.获取到要渲染的元素
     // 2.获取到渲染的位置
     // 作用域插槽
-    // const age = 18
+    const age = 18;
     return h("div", {}, [
-      renderSlots(this.$slots, "header"),
+      renderSlots(this.$slots, "header", { age }),
       foo,
       renderSlots(this.$slots, "footer"),
     ]);
