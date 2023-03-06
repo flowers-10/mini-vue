@@ -1,30 +1,34 @@
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance"
 import { initProps } from "./componentProps"
 import { shallowReadonly } from "../reactivity/reactive"
-import {emit} from './componentEmit'
+import { emit } from './componentEmit'
 import { initSlots } from "./componentSlots"
 
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
+  // console.log("createComponentInstance", parent);
+
   // 初始化组价
   const component = {
     vnode,
     type: vnode.type,
     setupState: {},
     props: {},
-    slots:{},
-    emit: (evnet) => {}
+    slots: {},
+    provides: parent ? parent.provides : {},
+    parent,
+    emit: (evnet) => { }
   }
   // 用户只要传事件名即可，bind已经把实例绑定到内部去调用了
-  component.emit = emit.bind(null,component)
+  component.emit = emit.bind(null, component)
 
   return component
 }
 
 export function setupComponent(instance) {
   // TODO
-  initProps(instance,instance.vnode.props)
+  initProps(instance, instance.vnode.props)
   // 初始化插槽
-  initSlots(instance,instance.vnode.children)
+  initSlots(instance, instance.vnode.children)
   setupStatefulComponent(instance)
 
 
@@ -33,14 +37,15 @@ export function setupComponent(instance) {
 function setupStatefulComponent(instance) {
   const Component = instance.type
 
-  instance.proxy = new Proxy({_:instance}, PublicInstanceProxyHandlers)
+  instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers)
 
   const { setup } = Component
 
   if (setup) {
+
     setCurrentInstance(instance)
-    const setupResult = setup(shallowReadonly(instance.props),{
-      emit:instance.emit,
+    const setupResult = setup(shallowReadonly(instance.props), {
+      emit: instance.emit,
     })
     setCurrentInstance(null)
 
@@ -68,12 +73,12 @@ function finishComponentSetup(instance) {
   // }
 }
 
-let currentInstance = null
+let currentInstance = {};
 
 export function getCurrentInstance() {
   return currentInstance
 }
 
 export function setCurrentInstance(instance) {
-  currentInstance = instance
+  currentInstance = instance;
 }
