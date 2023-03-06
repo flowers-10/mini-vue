@@ -1,13 +1,17 @@
+// 合并对象
 export const extend = Object.assign
 
+// 判断是否是个对象
 export function isObject(val) {
   return val !== null && typeof val === 'object'
 }
 
+// 判断对象是否改变
 export const hasChanged = (val, newVal) => {
   return !Object.is(val, newVal)
 }
 
+// 判断对象是否拥有key
 export const hasOwn = (val, key) => Object.prototype.hasOwnProperty.call(val, key)
 
 // 转驼峰
