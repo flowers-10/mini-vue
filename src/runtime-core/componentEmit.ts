@@ -13,6 +13,8 @@ export function emit(instance, event, ...args) {
   // toHandlerKey给事件加上on并且on后面的第一个字符大写(例如 addFoo转换成AddFoo,在给AddFoo转换成onAddFoo)
   const toHandlerName = toHandlerKey(camelize(event))
 
+  // const handler = props["onAdd"]
+  // handler && handler(...args)
   // 得到用户传入的emit函数（例如 props[onAddFoo])
   const handler = props[toHandlerName]
   // 调用emit

@@ -2,7 +2,7 @@ import { createVnode } from './vnode'
 
 export function createAppAPI(render) {
   return function createApp(rootComponent) {
-    debugger
+    // debugger
     return {
       mount(rootContainer) {
         // 先转换成vnode

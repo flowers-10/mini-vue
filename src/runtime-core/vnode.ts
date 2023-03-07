@@ -3,16 +3,17 @@ import { ShapeFlags } from '../shared/ShapeFlags'
 export const Fragment = Symbol("Fragment")
 export const Text = Symbol("Text")
 
-
+// 创建虚拟节点
 export function createVnode(type, props?, children?) {
   const vnode = {
-    type,
-    props,
-    children,
-    shapeFlag: getShapFlag(type),
-    el: null
+    type,//用户传入的第一个参数，组件app 包含render和setup函数
+    props,//用户传入的第二个参数，组件app 内部填充的 属性
+    children,//用户传入的第三个参数，组件app 内部填充的 节点
+    shapeFlag: getShapFlag(type),//判断初始化的节点类型
+    el: null //初始化时是null
   }
-
+  // console.log(vnode);
+  
   // children
   if (typeof children === 'string') {
     vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN

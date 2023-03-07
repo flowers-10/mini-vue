@@ -27,7 +27,7 @@ export function createComponentInstance(vnode, parent) {
   return component
 }
 
-// setup组件
+// setup组件，初始化props和slots，代理实例对象
 export function setupComponent(instance) {
   // 初始化props，进入componentProps.ts
   // 取出vnode上的props给组件实例添加props属性
@@ -43,8 +43,10 @@ export function setupComponent(instance) {
   setupStatefulComponent(instance)
 }
 
+// 初始化一个有状态的组件
 // 代理组件实例，执行setup，返回CurrentInstance当前组件实例
 function setupStatefulComponent(instance) {
+  // 这一步是为了找到setup
   const Component = instance.type
 
   // 代理组件实例返回一个当前的实例
@@ -52,17 +54,19 @@ function setupStatefulComponent(instance) {
   // 取出组件中的setup
   const { setup } = Component
 
+  // 拿到setup的返回值
   if (setup) {
     // 返回currentInstance即当前组件的实例
     setCurrentInstance(instance)
     // 获得setup的返回值，setup: ƒ setup()
-    // 调用setup，它接收2个参数，props和emit，我们把当前实例的props和emit传入即可
+    // 调用setup就能得到返回值，它接收2个参数，props和emit，我们把当前实例的props和emit传入即可
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     })
     // 变null及时释放掉，减少内存压力
     setCurrentInstance(null)
-    // 判断setupResult是不是对象，是就存入到实例中
+    // 因为setupResult可以返回函数也可以返回object
+    // 所以要判断setupResult是不是对象，是就存入到实例中
     handleSetupResult(instance, setupResult)
   }
 
@@ -84,11 +88,12 @@ function handleSetupResult(instance, setupResult) {
 // 给组件实例添加一个render属性
 function finishComponentSetup(instance) {
   const Component = instance.type
-
-  // if(Component.render) {
-  // 给实例添加render属性
-  instance.render = Component.render
-  // }
+  // 判断是否有render属性
+  if (Component.render) {
+    // 给实例添加render属性
+    // console.log("finishComponentSetup:", Component.render);
+    instance.render = Component.render
+  }
 }
 
 let currentInstance = {};

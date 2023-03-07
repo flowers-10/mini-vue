@@ -1,5 +1,6 @@
 import { ShapeFlags } from "../shared/ShapeFlags";
 
+// 初始化插槽
 export function initSlots(instance, children) {
   const { vnode } = instance;
   // 判断标记是否命中插槽，不是就不用初始化插槽
@@ -9,6 +10,7 @@ export function initSlots(instance, children) {
   }
 }
 
+// 
 function normalizeObjectSlots(slots: any, children: any) {
   //  children object
   for (const key in children) {

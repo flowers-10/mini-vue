@@ -20,7 +20,7 @@ export function createRenderer(options) {
     patch(vnode, container, null)
   }
 
-  // patch算法主要用于识别vnode的type类型
+  // patch算法主要用于识别vnode的type类型，然后递归的执行逻辑生成真实DOM
   function patch(vnode, container, parentComponent) {
     // 获取到vnode的type节点类型和shapeFlag标记
     const { type, shapeFlag } = vnode
@@ -95,8 +95,9 @@ export function createRenderer(options) {
       mountChildren(vnode, el, parentComponent)
     }
 
-    // props
+    // 取出props
     const { props } = vnode
+    // 拿出props对象中所有的key
     for (const key in props) {
       const val = props[key]
       // console.log(key);
@@ -135,22 +136,32 @@ export function createRenderer(options) {
     const instance = createComponentInstance(initialVnode, parentComponent)
     //  setup组件，给实例添加props属性，添加prxoy属性，添加setupResult属性，添加render属性
     setupComponent(instance)
-    // 
+    // 处理组件内部的虚拟节点
     setupRenderEffect(instance, initialVnode, container)
   }
 
-  // 
+  // 处理组件内部的虚拟节点
+  // 触发patch算法去递归所有组件虚拟节点内的 （组件和标签） 直到把整个组件都渲染出来为止！
   function setupRenderEffect(instance, initialVnode, container) {
-    // 取出Proxy代理，调用时就会返回一个当前实例
+    // 取出Proxy代理
+    // 我们通过proxy代理可以准确的获得实例中的属性
     const { proxy } = instance
-    // instance实例身上的render函数去proxy内部执行
+    // instance实例身上的render属性内部 的this 绑定 到proxy内部 的 this 上
+    // 这么做的目的是为了能在render是访问setup定义的变量 
+    // 例如 render内部(this.msg)  ===> 这个this 就会指向 setup中的(return {msg: "mini-vue-hahah",};)
+    // 返回一个虚拟节点树 (举例：{type: 'div', props: {…}, children: Array(2), shapeFlag: 9, el: null} )
     const subTree = instance.render.call(proxy)
-
     // vnode-> patch
     // vnode -> element -> mountElement
+    // 有了这个虚拟节点树我们就可以继续patch了
+    // 重新patch，直到遍历成组件内部的元素节点，元素节点就进入mountElement，去生成真实DOM！
+    // subTree： 父节点内的所有子虚拟节点
+    // container： 容器，所有子节点会挂载到这个容器里面
+    // instance： 当前的组件实例，会交给patch算法，这个instance主要是作为parent，为provide和inject服务，通过这个parent父组件的实例，我们就可以在子组件内部访问父组件provide提供的数据和函数了
     patch(subTree, container, instance)
 
     // element -> mount
+    // 到这里肯定是所有节点都渲染完了，把子的虚拟节点给到 组件的虚拟节点
     initialVnode.el = subTree.el
   }
 
