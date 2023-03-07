@@ -108,7 +108,7 @@ export function triggerEffects(dep) {
 }
 
 
-//响应式函数
+//响应式副作用函数
 export const effect = (fn, options: any = {}) => {
   // 实例
   const _effect = new ReactiveEffect(fn, options.scheduler);

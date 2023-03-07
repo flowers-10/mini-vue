@@ -8,6 +8,7 @@ export const Foo = {
       // add-foo
       emit("add-foo",1,2)
     }
+
     return {
       emitAdd
     }
