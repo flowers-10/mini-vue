@@ -27,10 +27,9 @@ function patchProp(el, key,prevVal, nextVal) {
   }
 }
 
-function insert(el,parent) {
+function insert(child,parent,anchor) {
   // console.log("insert---------------");
-  
-  parent.append(el)
+  parent.insertBefore(child,anchor || null)
 }
 
 // 移除传入的节点
