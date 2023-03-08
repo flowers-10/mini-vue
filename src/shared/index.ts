@@ -1,6 +1,8 @@
 // 合并对象
 export const extend = Object.assign
 
+export const EMPTY_OBJ = {}
+
 // 判断是否是个对象
 export function isObject(val) {
   return val !== null && typeof val === 'object'

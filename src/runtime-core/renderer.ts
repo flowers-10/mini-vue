@@ -3,6 +3,7 @@ import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component"
 import { createAppAPI } from "./createApp";
 import { Fragment, Text } from "./vnode";
+import { EMPTY_OBJ } from '../shared'
 
 
 export function createRenderer(options) {
@@ -57,10 +58,12 @@ export function createRenderer(options) {
 
       // 否则更新
     } else {
+      // 对比新旧节点
       patchElement(n1, n2, container)
     }
   }
 
+  // 这里对比新旧节点更新新的虚拟节点内容
   function patchElement(n1, n2, container) {
     console.log("patchElement");
     console.log("n1", n1);
@@ -68,8 +71,37 @@ export function createRenderer(options) {
     // 处理更新对比
     // props
     // children
+    const oldProps = n1.props || EMPTY_OBJ
+    const newProps = n2.props || EMPTY_OBJ
+
+    const el = (n2.el = n1.el)
+    patchProps(el, oldProps, newProps)
   }
 
+  // 在这一步更新新节点的props属性
+  function patchProps(el, oldProps, newProps) {
+    // 只有两个节点不同时才需要对比具体的那些属性需要修改
+    if (oldProps !== newProps) {
+      for (const key in newProps) {
+        const prevProp = oldProps[key]
+        const nextProp = newProps[key]
+        // 新老属性不同，说明用户修改了属性
+        if (prevProp !== nextProp) {
+          hostPatchProp(el, key, prevProp, nextProp)
+        }
+      }
+      // 老节点是空的，新节点就不能删除属性了。所以要判断不空的老节点才可以删属性
+      if (oldProps !== EMPTY_OBJ) {
+        for (const key in oldProps) {
+          // 老节点的key不在新节点内，说明新节点删除了属性
+          if (!(key in newProps)) {
+            hostPatchProp(el, key, oldProps[key], null)
+          }
+        }
+      }
+
+    }
+  }
 
   function mountElement(vnode, container, parentComponent) {
     const el = (vnode.el = hostCreateElement(vnode.type))
@@ -85,7 +117,7 @@ export function createRenderer(options) {
     const { props } = vnode
     for (const key in props) {
       const val = props[key]
-      hostPatchProp(el, key, val)
+      hostPatchProp(el, key, null, val)
     }
 
     hostInsert(el, container)
@@ -113,7 +145,7 @@ export function createRenderer(options) {
     // 通过响应式副作用函数绑定整个更新的流程
     // 当响应触发set操作时，捕获器就会重新触发依赖执行effect内部的函数
     effect(() => {
-    // 通过实例的isMounted判断 是初始化 还是更新
+      // 通过实例的isMounted判断 是初始化 还是更新
       if (!instance.isMounted) {
         console.log('init');
 
