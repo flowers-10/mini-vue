@@ -33,10 +33,25 @@ function insert(el,parent) {
   parent.append(el)
 }
 
+// 移除传入的节点
+function remove(child) {
+  const parent = child.parentNode
+  if(parent) {
+    parent.removeChild(child)
+  }
+}
+
+// 给父节点添加文字
+function setElementText(el,text) {
+  el.textContent = text
+}
+
 const renderer:any = createRenderer({
   createElement,
   patchProp,
-  insert
+  insert,
+  remove,
+  setElementText
 })
 
 export function createApp (...args) {
