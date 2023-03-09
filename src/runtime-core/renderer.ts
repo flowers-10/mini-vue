@@ -71,9 +71,9 @@ export function createRenderer(options) {
 
   // 这里对比新旧节点并且更新把旧dom删除或者替换成新节点的dom
   function patchElement(n1, n2, container, parentComponent, anchor) {
-    console.log("patchElement");
-    console.log("n1", n1);
-    console.log("n2", n2);
+    console.log("patchElement开始新旧节点对比");
+    console.log("n1老节点", n1);
+    console.log("n2新节点", n2);
 
     // 处理更新对比
     const oldProps = n1.props || EMPTY_OBJ
@@ -125,6 +125,11 @@ export function createRenderer(options) {
     }
   }
 
+  // c1:老的children
+  // c2:新的children
+  // container节点挂载位置
+  // parentComponent 父组件
+  // parentAnchor 需要挂载的父锚点
   function patchKeyedChildren(c1, c2, container, parentComponent, parentAnchor) {
     const l2 = c2.length
     let i = 0;
@@ -144,8 +149,10 @@ export function createRenderer(options) {
       // 说明两个节点相同的type和key相同
       if (isSomeVnodeType(n1, n2)) {
         // 继续遍历内部是否相同
+        console.log('左侧对比：两个节点相同，开始深度遍历该节点内部是否相同');
         patch(n1, n2, container, parentComponent, parentAnchor)
       } else {
+        // 跳出循环i就不会++了
         break
       }
       i++
@@ -159,8 +166,10 @@ export function createRenderer(options) {
       // 说明两个节点相同的type和key相同
       if (isSomeVnodeType(n1, n2)) {
         // 继续遍历内部是否相同
+        console.log('右侧对比：两个节点相同，开始深度遍历该节点内部是否相同');
         patch(n1, n2, container, parentComponent, parentAnchor)
       } else {
+        // 跳出循环e1 e2 就不会--了
         break
       }
       e1--
@@ -170,23 +179,110 @@ export function createRenderer(options) {
     // 3.新的比老的多 创建
     if (i > e1) {
       if (i <= e2) {
+        // 锚点就在c2（新节点内的children）上 + 1
+        // 这样dom就在锚点上创建了
         const nextPos = e2 + 1
         const anchor = nextPos < l2 ? c2[nextPos].el : null
         while (i <= e2) {
+          // 新节点根据锚点重新patch，最终挂载到dom上
+          console.log("新的节点比老的节点多，深度遍历把该dom树渲染");
           patch(null, c2[i], container, parentComponent, anchor)
           i++
         }
       }
 
       // 4.新的比老的少 删除
+      // 如果i 大于 e2 说明新节点children的长度比 老节点children的长度少
     } else if (i > e2) {
+      // 遍历老节点children
       while (i <= e1) {
+        // 删除 大于新节点（比如新节点4个dom）又小于老节点（6个dom）的 dom（删掉多出来的一个dom）
+        console.log("新的节点比老的节点少，直接删除当前dom");
         hostRemove(c1[i].el)
+        // i++ 再进入一次循环（下次就会又删除一个dom，直到删到新节点长度为止）
         i++
       }
-      // 5.乱序 不知道节点顺序时
+
+      // 5.中间部分的 乱序 说明不知道节点顺序 
     } else {
-      // 乱序部分
+      // 乱序部分中间的对比
+      console.log("双端对比结束！");
+      console.log("开始中间部分的乱序对比！");
+      
+      let s1 = i //记录老节点通过双端对比后，乱序开始的第一个child开始的位置
+      let s2 = i //记录新节点通过双端对比后，乱序开始的第一个child开始的位置
+
+      // 当前乱序部分新节点的总长度
+      const toBePatched = e2 - s2 + 1
+      // 老节点内child 出现在 新节点内的次数
+      let patched = 0
+
+      // 通过hash表保存新节点的内child的key
+      // 那么可以通过映射的key.get对比老节点key如果有说明 老节点的child出现在新节点里面了
+      // 所以key可以减少vue3的一层循环
+      const keyToNewIndexMap = new Map()
+
+      // 把新节点内children的key映射到map表中
+      for (let i = s2; i <= e2; i++) {
+        // 找到所有新节点的child
+        const nextChild = c2[i]
+        // 把所有新节点child的key全部存入hash表，值就是当前key的下标，用于给到newIndex，newIndex就可以记录新老节点相同child在新节点的下标了
+        keyToNewIndexMap.set(nextChild.key, i)
+      }
+
+      //遍历老节点children 
+      for (let i = s1; i <= e1; i++) {
+        // 获得老节点内单个child
+        const prevChild = c1[i]
+        console.log("当前对比的节点！！",prevChild);
+        
+        // 如果老节点在新节点相同child出现次数 大于 新节点的chilren的数量，说明新节点内出现的相同的节点已经被遍历完了
+        if (patched >= toBePatched) {
+          // 那么直接删除老节点内多出来的child节点即可，因为他们不会出现在新节点内了
+          console.log("因为超出长度删除的节点!!!",prevChild.el);
+          
+          hostRemove(prevChild.el)
+          // 跳过下面的逻辑，进入下一轮循环
+          continue
+        }
+
+        // 定义一个下标，记录老节点的child是否出现在新节点children里面过，如果出现了这个下标就是新节点内child的下标
+        let newIndex
+
+        // 说明用户填了key，那么直接在map表里找（所以性能优化一定要填写key，否则只能进入else，又增加了一层遍历浪费性能）
+        if (prevChild.key !== null) {
+          // 那么直接通过新节点的map表去查找有没有老节点的key，有就把新节点child的坐标保存下来
+          newIndex = keyToNewIndexMap.get(prevChild.key)
+
+          // 用户没填key那只能去新节点里遍历出每一个child和当前老节点的child全量对比了
+        } else {
+          for (let j = s2; j < e2; j++) {
+            // 如果当前老节点的child 和 新节点children中的某个child 的type或者key相同
+            if (isSomeVnodeType(prevChild, c2[j])) {
+              // 说明出现在了新节点里，我们给他一个标记，并且退出当前循环即可
+              newIndex = j
+              break
+            }
+          }
+        }
+
+        // 说明当前老节点chilren中的child没有出现在新节点里面过
+        if (newIndex === undefined) {
+          // 那么删除当前这个节点即可
+          console.log('对比中删除的节点',prevChild.el);
+          
+          hostRemove(prevChild.el)
+
+          // 说明老节点的children中的child在新节点里出现了！
+        } else {
+          // 那么继续深层的对比这两个child里面的children和props等是否也相同
+          console.log('新旧节点相同，深度遍历新旧节点内部是否相同');
+          patch(prevChild, c2[newIndex], container, parentComponent, null)
+          // 给patched标记+1 ，说明对比新老节点的次数
+          patched++
+        }
+
+      }
     }
 
   }
@@ -270,7 +366,7 @@ export function createRenderer(options) {
     effect(() => {
       // 通过实例的isMounted判断 是初始化 还是更新
       if (!instance.isMounted) {
-        console.log('init');
+        // console.log('init');
 
         const { proxy } = instance
         // 修改：给实例添加一个subTree属性保存当前所有子虚拟节点
