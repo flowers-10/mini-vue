@@ -149,7 +149,7 @@ export function createRenderer(options) {
       // 说明两个节点相同的type和key相同
       if (isSomeVnodeType(n1, n2)) {
         // 继续遍历内部是否相同
-        console.log('左侧对比：两个节点相同，开始深度遍历该节点内部是否相同');
+        // console.log('左侧对比：两个节点相同，开始深度遍历该节点内部是否相同');
         patch(n1, n2, container, parentComponent, parentAnchor)
       } else {
         // 跳出循环i就不会++了
@@ -166,7 +166,7 @@ export function createRenderer(options) {
       // 说明两个节点相同的type和key相同
       if (isSomeVnodeType(n1, n2)) {
         // 继续遍历内部是否相同
-        console.log('右侧对比：两个节点相同，开始深度遍历该节点内部是否相同');
+        // console.log('右侧对比：两个节点相同，开始深度遍历该节点内部是否相同');
         patch(n1, n2, container, parentComponent, parentAnchor)
       } else {
         // 跳出循环e1 e2 就不会--了
@@ -185,7 +185,7 @@ export function createRenderer(options) {
         const anchor = nextPos < l2 ? c2[nextPos].el : null
         while (i <= e2) {
           // 新节点根据锚点重新patch，最终挂载到dom上
-          console.log("新的节点比老的节点多，深度遍历把该dom树渲染");
+          // console.log("新的节点比老的节点多，深度遍历把该dom树渲染");
           patch(null, c2[i], container, parentComponent, anchor)
           i++
         }
@@ -197,7 +197,7 @@ export function createRenderer(options) {
       // 遍历老节点children
       while (i <= e1) {
         // 删除 大于新节点（比如新节点4个dom）又小于老节点（6个dom）的 dom（删掉多出来的一个dom）
-        console.log("新的节点比老的节点少，直接删除当前dom");
+        // console.log("新的节点比老的节点少，直接删除当前dom");
         hostRemove(c1[i].el)
         // i++ 再进入一次循环（下次就会又删除一个dom，直到删到新节点长度为止）
         i++
@@ -205,10 +205,10 @@ export function createRenderer(options) {
 
       // 5.中间部分的 乱序 说明不知道节点顺序 
     } else {
-      // 乱序部分中间的对比
-      console.log("双端对比结束！");
-      console.log("开始中间部分的乱序对比！");
-      
+      // 中间乱序部分的对比
+      // console.log("双端对比结束！");
+      // console.log("开始中间部分的乱序对比！");
+
       let s1 = i //记录老节点通过双端对比后，乱序开始的第一个child开始的位置
       let s2 = i //记录新节点通过双端对比后，乱序开始的第一个child开始的位置
 
@@ -222,6 +222,15 @@ export function createRenderer(options) {
       // 所以key可以减少vue3的一层循环
       const keyToNewIndexMap = new Map()
 
+      // 映射表初始化，根据新节点chilren的长度创建一个映射表
+      const newIndexToOldIndexMap = new Array(toBePatched)
+      // 确认移动
+      let moved = false
+      // 计算指针移动的位置
+      let maxNewIndexSoFar = 0
+      for (let i = 0; i < toBePatched; i++) newIndexToOldIndexMap[i] = 0
+
+
       // 把新节点内children的key映射到map表中
       for (let i = s2; i <= e2; i++) {
         // 找到所有新节点的child
@@ -234,13 +243,13 @@ export function createRenderer(options) {
       for (let i = s1; i <= e1; i++) {
         // 获得老节点内单个child
         const prevChild = c1[i]
-        console.log("当前对比的节点！！",prevChild);
-        
+        // console.log("当前对比的节点！！", prevChild);
+
         // 如果老节点在新节点相同child出现次数 大于 新节点的chilren的数量，说明新节点内出现的相同的节点已经被遍历完了
         if (patched >= toBePatched) {
           // 那么直接删除老节点内多出来的child节点即可，因为他们不会出现在新节点内了
-          console.log("因为超出长度删除的节点!!!",prevChild.el);
-          
+          // console.log("因为超出长度删除的节点!!!", prevChild.el);
+
           hostRemove(prevChild.el)
           // 跳过下面的逻辑，进入下一轮循环
           continue
@@ -250,6 +259,7 @@ export function createRenderer(options) {
         let newIndex
 
         // 说明用户填了key，那么直接在map表里找（所以性能优化一定要填写key，否则只能进入else，又增加了一层遍历浪费性能）
+        // 最终得到当前的下标，我们可以对这个下标处理是否删除还是移动还是添加
         if (prevChild.key !== null) {
           // 那么直接通过新节点的map表去查找有没有老节点的key，有就把新节点child的坐标保存下来
           newIndex = keyToNewIndexMap.get(prevChild.key)
@@ -269,20 +279,62 @@ export function createRenderer(options) {
         // 说明当前老节点chilren中的child没有出现在新节点里面过
         if (newIndex === undefined) {
           // 那么删除当前这个节点即可
-          console.log('对比中删除的节点',prevChild.el);
-          
+          // console.log('对比中删除的节点', prevChild.el);
           hostRemove(prevChild.el)
-
           // 说明老节点的children中的child在新节点里出现了！
-        } else {
           // 那么继续深层的对比这两个child里面的children和props等是否也相同
-          console.log('新旧节点相同，深度遍历新旧节点内部是否相同');
+        } else {
+          // 如果当前位置大于上次移动的位置
+          if (newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex
+            // 如果当前位置小于上次移动的位置，说明他位置变过了
+          } else {
+            moved = true
+          }
+          // 老节点的children中的child在新节点里出现 给映射表存入  
+          newIndexToOldIndexMap[newIndex - s2] = i + 1;
+
           patch(prevChild, c2[newIndex], container, parentComponent, null)
           // 给patched标记+1 ，说明对比新老节点的次数
           patched++
         }
 
       }
+
+      // 生成最长递增子序列
+      console.log(newIndexToOldIndexMap);
+      // 举例:newIndexToOldIndexMap = [5,3,4] 
+      // 代表老DOM树的第4个节点现在 在 新DOM树去掉双端后 中间部分 的第一个位置
+      // 生成的最长递增子序列就是 [1,2]
+      const increasingNewIndexSequence = moved ? getSequence(newIndexToOldIndexMap) : []
+      // 最长递增子序列的指针
+      let j = increasingNewIndexSequence.length - 1
+      // 新节点的序列 和 最长递增子序列进行对比
+      // 双指针对比
+      // i 新节点上的指针
+      // j 最长递增子序列的指针
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        const nextIndex = s2 + i
+        const nextChild = c2[nextIndex]
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : parentAnchor
+
+        // 如果等于0说明在老dom中不存在，所以要创建新的
+        if(newIndexToOldIndexMap[i] === 0) {
+          patch(null,nextChild,container,parentComponent,anchor)
+        }else if (moved) {
+          // 如果新节点上的指针不在最长递增子序列里说明要移动位置了
+          if (j < 0 || increasingNewIndexSequence[j] !== i) {
+            console.log('移动位置');
+            hostInsert(nextChild.el, container, anchor)
+            // 否则最长子序列的指针向下移动一位
+          } else {
+            j--
+          }
+        }
+
+
+      }
+
     }
 
   }
@@ -398,4 +450,49 @@ export function createRenderer(options) {
   return {
     createApp: createAppAPI(render)
   }
+}
+
+
+
+
+// 最长递增子序列
+function getSequence(arr: number[]): number[] {
+  const p = arr.slice()
+  const result = [0]
+  let i, j, u, v, c
+  const len = arr.length
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i]
+    if (arrI !== 0) {
+      j = result[result.length - 1]
+      if (arr[j] < arrI) {
+        p[i] = j
+        result.push(i)
+        continue
+      }
+      u = 0
+      v = result.length - 1
+      while (u < v) {
+        c = (u + v) >> 1
+        if (arr[result[c]] < arrI) {
+          u = c + 1
+        } else {
+          v = c
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1]
+        }
+        result[u] = i
+      }
+    }
+  }
+  u = result.length
+  v = result[u - 1]
+  while (u-- > 0) {
+    result[u] = v
+    v = p[v]
+  }
+  return result
 }
