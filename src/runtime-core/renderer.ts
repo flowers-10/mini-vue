@@ -72,7 +72,7 @@ export function createRenderer(options) {
   // 这里对比新旧节点并且更新把旧dom删除或者替换成新节点的dom
   function patchElement(n1, n2, container, parentComponent, anchor) {
     console.log("patchElement开始新旧节点对比");
-    console.log("n1老节点", n1);
+    console.log("n1老节点s", n1);
     console.log("n2新节点", n2);
 
     // 处理更新对比
