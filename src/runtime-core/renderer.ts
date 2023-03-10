@@ -217,16 +217,16 @@ export function createRenderer(options) {
       // 老节点内child 出现在 新节点内的次数
       let patched = 0
 
-      // 通过hash表保存新节点的内child的key
+      // 通过hash表保存新虚拟DOM数内child的位置 例如({'D'=>2,'C'=>3,'Y'=>4,'E'=>5})
       // 那么可以通过映射的key.get对比老节点key如果有说明 老节点的child出现在新节点里面了
-      // 所以key可以减少vue3的一层循环
+      // 所以key可以减少vue3的一层循环,不写key只能每一个都去遍历了
       const keyToNewIndexMap = new Map()
 
       // 映射表初始化，根据新节点chilren的长度创建一个映射表
       const newIndexToOldIndexMap = new Array(toBePatched)
       // 确认移动
       let moved = false
-      // 计算指针移动的位置
+      // 记录新老节点对比后，新节点移动到的最远的距离
       let maxNewIndexSoFar = 0
       for (let i = 0; i < toBePatched; i++) newIndexToOldIndexMap[i] = 0
 
@@ -239,11 +239,11 @@ export function createRenderer(options) {
         keyToNewIndexMap.set(nextChild.key, i)
       }
 
-      //遍历老节点children 
+      //遍历老节点的DOM树 ,从老DOM树和新DOM树双端对比去掉两端相同后，老节点中间部分左侧开始遍历
       for (let i = s1; i <= e1; i++) {
-        // 获得老节点内单个child
+        // 获得老DOM上第i个child
         const prevChild = c1[i]
-        // console.log("当前对比的节点！！", prevChild);
+        // console.log("当前老DOM树上要开始和新DOM树对比的节点！！", prevChild);
 
         // 如果老节点在新节点相同child出现次数 大于 新节点的chilren的数量，说明新节点内出现的相同的节点已经被遍历完了
         if (patched >= toBePatched) {
@@ -264,7 +264,8 @@ export function createRenderer(options) {
           // 那么直接通过新节点的map表去查找有没有老节点的key，有就把新节点child的坐标保存下来
           newIndex = keyToNewIndexMap.get(prevChild.key)
 
-          // 用户没填key那只能去新节点里遍历出每一个child和当前老节点的child全量对比了
+
+        // 用户没填key那只能去新节点里遍历出每一个child和当前老节点的child全量对比了
         } else {
           for (let j = s2; j < e2; j++) {
             // 如果当前老节点的child 和 新节点children中的某个child 的type或者key相同
@@ -276,7 +277,7 @@ export function createRenderer(options) {
           }
         }
 
-        // 说明当前老节点chilren中的child没有出现在新节点里面过
+        // 说明当前老虚拟DOM树中的child没有出现在新虚拟DOM树里面过
         if (newIndex === undefined) {
           // 那么删除当前这个节点即可
           // console.log('对比中删除的节点', prevChild.el);
@@ -284,16 +285,21 @@ export function createRenderer(options) {
           // 说明老节点的children中的child在新节点里出现了！
           // 那么继续深层的对比这两个child里面的children和props等是否也相同
         } else {
-          // 如果当前位置大于上次移动的位置
+          // 如果这次循环中当前新DOM树的的child节点位置 大于 最远移动距离，那么当前移动的距离 就是 最远移动过的距离
           if (newIndex >= maxNewIndexSoFar) {
             maxNewIndexSoFar = newIndex
-            // 如果当前位置小于上次移动的位置，说明他位置变过了
+
+          // 如果这次循环中当前新DOM树的的child节点位置 小于 最远移动距离，说明当前节点对比老dom数中节点的位置 它的位置肯定 变化过了
           } else {
+            // 标记这个节点移动过
             moved = true
           }
-          // 老节点的children中的child在新节点里出现 给映射表存入  
+          // 老虚拟DOM树的child在新节点里出现
+          // 给映射表存入
+          // newIndex - s2 就是算出新DOM树中去掉双端后，在新DOM树中间部分的 下标位置
+          // i+1 表示当前这个老的VNode节点在老DOM树的总长度下的 下标位置 再 + 1
           newIndexToOldIndexMap[newIndex - s2] = i + 1;
-
+          // 继续深层递归调用patch算法对比当前新旧VNode
           patch(prevChild, c2[newIndex], container, parentComponent, null)
           // 给patched标记+1 ，说明对比新老节点的次数
           patched++
@@ -306,23 +312,31 @@ export function createRenderer(options) {
       // 举例:newIndexToOldIndexMap = [5,3,4] 
       // 代表老DOM树的第4个节点现在 在 新DOM树去掉双端后 中间部分 的第一个位置
       // 生成的最长递增子序列就是 [1,2]
+      // 这里做了优化，如果没有移动过那就不用求最长子序列，直接创建多余的节点即可，如果移动过了，再求最长子序列
       const increasingNewIndexSequence = moved ? getSequence(newIndexToOldIndexMap) : []
       // 最长递增子序列的指针
       let j = increasingNewIndexSequence.length - 1
-      // 新节点的序列 和 最长递增子序列进行对比
+      // 新节点的序列 和 最长递增子序列进行对比，从右往左对比
+      // 为什么要倒序对比？因为从最右侧开始对比可以保证锚点的正确性！
       // 双指针对比
       // i 新节点上的指针
       // j 最长递增子序列的指针
       for (let i = toBePatched - 1; i >= 0; i--) {
+        // 获得当前新DOM树上 去掉双端乱序部分  开始的节点坐标位置
         const nextIndex = s2 + i
+        // 获得新DOM树上的这个VNode
         const nextChild = c2[nextIndex]
+        // nextIndex + 1 < l2 :如果当前新DOM树的右侧部分下标+1 < 新节点的length（数组内的最末尾坐标+1 === length）说明它在新DOM树的范围内，直接找到当前节点的后一位做锚点，然后插入到这个锚点上就可以了
+        // nextIndex + 1 > l2 ：说明它当前的坐标超出了新DOM数的长度，那么就往直接在新DOM树最后面生成这个DOM
         const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : parentAnchor
 
-        // 如果等于0说明在老dom中不存在，所以要创建新的
+        // 如果等于0说明在老虚拟DOM中根本不存在，那么创建一个新的DOM
         if(newIndexToOldIndexMap[i] === 0) {
           patch(null,nextChild,container,parentComponent,anchor)
         }else if (moved) {
-          // 如果新节点上的指针不在最长递增子序列里说明要移动位置了
+          // 如果j指针已经是负数，说明当前节点已经超出了子序列，那就肯定要移动位置了
+          // 或者如果新节点上的指针不在最长递增子序列里说明这个节点肯定是要移动位置了
+          // 如果当前节点在最长递增子序列里，我们就不能移动位置，要保持这个最长递增子序列顺序永远不变即可
           if (j < 0 || increasingNewIndexSequence[j] !== i) {
             console.log('移动位置');
             hostInsert(nextChild.el, container, anchor)
