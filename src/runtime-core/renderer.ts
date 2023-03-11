@@ -264,7 +264,6 @@ export function createRenderer(options) {
           // 那么直接通过新节点的map表去查找有没有老节点的key，有就把新节点child的坐标保存下来
           newIndex = keyToNewIndexMap.get(prevChild.key)
 
-
         // 用户没填key那只能去新节点里遍历出每一个child和当前老节点的child全量对比了
         } else {
           for (let j = s2; j <= e2; j++) {
