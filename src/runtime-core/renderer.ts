@@ -4,6 +4,7 @@ import { createComponentInstance, setupComponent } from "./component"
 import { createAppAPI } from "./createApp";
 import { Fragment, Text } from "./vnode";
 import { EMPTY_OBJ } from '../shared'
+import { shouldUpdateComponent } from "./componentUpdateUtils";
 
 
 export function createRenderer(options) {
@@ -25,21 +26,16 @@ export function createRenderer(options) {
     const { type, shapeFlag } = n2
 
     switch (type) {
-
       case Fragment:
         processFragment(n1, n2, container, parentComponent, anchor)
         break;
-
       case Text:
         processText(n1, n2, container)
         break;
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
-
           processElement(n1, n2, container, parentComponent, anchor)
-
         } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-
           processComponent(n1, n2, container, parentComponent, anchor)
         }
         break;
@@ -264,7 +260,7 @@ export function createRenderer(options) {
           // 那么直接通过新节点的map表去查找有没有老节点的key，有就把新节点child的坐标保存下来
           newIndex = keyToNewIndexMap.get(prevChild.key)
 
-        // 用户没填key那只能去新节点里遍历出每一个child和当前老节点的child全量对比了
+          // 用户没填key那只能去新节点里遍历出每一个child和当前老节点的child全量对比了
         } else {
           for (let j = s2; j <= e2; j++) {
             // 如果当前老节点的child 和 新节点children中的某个child 的type或者key相同
@@ -288,7 +284,7 @@ export function createRenderer(options) {
           if (newIndex >= maxNewIndexSoFar) {
             maxNewIndexSoFar = newIndex
 
-          // 如果这次循环中当前新DOM树的的child节点位置 小于 最远移动距离，说明当前节点对比老dom数中节点的位置 它的位置肯定 变化过了
+            // 如果这次循环中当前新DOM树的的child节点位置 小于 最远移动距离，说明当前节点对比老dom数中节点的位置 它的位置肯定 变化过了
           } else {
             // 标记这个节点移动过
             moved = true
@@ -330,9 +326,9 @@ export function createRenderer(options) {
         const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : parentAnchor
 
         // 如果等于0说明在老虚拟DOM中根本不存在，那么创建一个新的DOM
-        if(newIndexToOldIndexMap[i] === 0) {
-          patch(null,nextChild,container,parentComponent,anchor)
-        }else if (moved) {
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, nextChild, container, parentComponent, anchor)
+        } else if (moved) {
           // 如果j指针已经是负数，说明当前节点已经超出了子序列，那就肯定要移动位置了
           // 或者如果新节点上的指针不在最长递增子序列里说明这个节点肯定是要移动位置了
           // 如果当前节点在最长递增子序列里，我们就不能移动位置，要保持这个最长递增子序列顺序永远不变即可
@@ -414,11 +410,30 @@ export function createRenderer(options) {
   }
 
   function processComponent(n1, n2, container, parentComponent, anchor) {
-    mountComponent(n2, container, parentComponent, anchor)
+    if (!n1) {
+      mountComponent(n2, container, parentComponent, anchor)
+    } else {
+      updateComponent(n1, n2)
+    }
   }
 
+  // 更新组件
+  function updateComponent(n1, n2) {
+    const instance = (n2.component = n1.component)
+
+    if(shouldUpdateComponent(n1, n2)) {
+      instance.next = n2
+      instance.update()
+    }else {
+      n2.el = n1.el
+      instance.vnode = n2
+    }
+  }
+
+  
+
   function mountComponent(initialVnode, container, parentComponent, anchor) {
-    const instance = createComponentInstance(initialVnode, parentComponent)
+    const instance = initialVnode.component = (createComponentInstance(initialVnode, parentComponent))
 
     setupComponent(instance)
 
@@ -428,10 +443,10 @@ export function createRenderer(options) {
   function setupRenderEffect(instance, initialVnode, container, anchor) {
     // 通过响应式副作用函数绑定整个更新的流程
     // 当响应触发set操作时，捕获器就会重新触发依赖执行effect内部的函数
-    effect(() => {
+    instance.update = effect(() => {
       // 通过实例的isMounted判断 是初始化 还是更新
       if (!instance.isMounted) {
-        // console.log('init');
+        console.log('init');
 
         const { proxy } = instance
         // 修改：给实例添加一个subTree属性保存当前所有子虚拟节点
@@ -446,6 +461,15 @@ export function createRenderer(options) {
       } else {
         // 更新阶段
         console.log('uptade');
+        // 需要一个 vnode
+        // next = 更新之后新的虚拟节点
+        // vnode = 更新之前的虚拟节点
+        const { next, vnode } = instance
+        if (next) {
+          next.el = vnode.el
+          updateComponentPreRender(instance, next)
+        }
+
         const { proxy } = instance
         // 本次新的虚拟节点
         const subTree = instance.render.call(proxy)
@@ -466,6 +490,12 @@ export function createRenderer(options) {
 }
 
 
+function updateComponentPreRender(instance, nextVNode) {
+  instance.vnode = nextVNode
+  instance.next = null
+
+  instance.props = nextVNode.props
+}
 
 
 // 最长递增子序列

@@ -9,6 +9,7 @@ export function createComponentInstance(vnode, parent) {
   const component = {
     vnode, //当前的虚拟DOM
     type: vnode.type, //当前的组件类型，包含name: "App",render: ƒ render(),setup: ƒ setup()
+    next:null,
     setupState: {}, // 存储 setup 的返回值
     props: {},
     slots: {},// 存放插槽的数据
