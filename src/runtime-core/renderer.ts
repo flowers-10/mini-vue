@@ -5,7 +5,7 @@ import { createAppAPI } from "./createApp";
 import { Fragment, Text } from "./vnode";
 import { EMPTY_OBJ } from '../shared'
 import { shouldUpdateComponent } from "./componentUpdateUtils";
-
+import { queueJobs } from "./scheduler";
 
 export function createRenderer(options) {
   const {
@@ -479,6 +479,11 @@ export function createRenderer(options) {
         // 交给patch算法去对比两个节点，只更新数据变化的节点
         patch(prevSubTree, subTree, container, instance, anchor)
 
+      }
+    },{
+      scheduler() {
+        console.log('update - scheduler');
+        queueJobs(instance.update)
       }
     })
 
