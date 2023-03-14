@@ -1,5 +1,10 @@
 import { NodeTypes } from "./ast";
 
+const enum TagType {
+  Start,
+  End,
+}
+
 // 解析双花括号
 export function baseParse(content: string) {
   // 创建上下文
@@ -12,15 +17,53 @@ export function baseParse(content: string) {
 function parseChildren(context) {
   // 新建一个nodes保存所有子
   const nodes: any = [];
-  let node
-  if(context.source.startsWith("{{")) {
+  let node;
+  const s = context.source;
+  if (s.startsWith("{{")) {
     // 解析{{ }}插入值并返回ast
     node = parseInterpolation(context);
+  } else if (s[0] === "<") {
+    // 如果第一个字符是<,说明是一个标签
+    if (/[a-z]/i.test(s[1])) {
+      console.log("parse element");
+      node = parseElement(context);
+    }
   }
   // 推入nodes
   nodes.push(node);
   // 返回ast树
   return nodes;
+}
+
+// 解析Element
+function parseElement(context: any) {
+    // Implement
+  // 1. 解析tag
+  const element = parseTag(context, TagType.Start);
+
+  parseTag(context, TagType.End);
+  console.log("-------", context.source);
+
+
+  return element;
+}
+
+// 解析标签生成ast树
+function parseTag(context: any, type: TagType) {
+    // 正则匹配context.source 是 <div 或者 </div
+  const match: any = /^<\/?([a-z]*)/i.exec(context.source);
+  // console.log(match);
+  // 拿到匹配的tag放入ast树
+  const tag:any = match[1];
+  // 2. 删除处理完成的代码
+  advanceBy(context, match[0].length);
+  advanceBy(context, 1);
+  // 如果是处理结束标签就不用return ast树
+  if (type === TagType.End) return;
+  return {
+    type: NodeTypes.ELEMENT,
+    tag,
+  };
 }
 
 // 解析{{ }}插入值
