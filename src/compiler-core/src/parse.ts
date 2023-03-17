@@ -9,42 +9,87 @@ const enum TagType {
 export function baseParse(content: string) {
   // 创建上下文
   const context = createParserContext(content);
-  // 根据当前上下文，生成ast数
-  return createRoot(parseChildren(context));
+  // 根据当前上下文，生成ast树
+  // 传入一个[]做栈
+  return createRoot(parseChildren(context, []));
 }
 
 // 解析子
-function parseChildren(context) {
+function parseChildren(context, ancestors) {
   // 新建一个nodes保存所有子
   const nodes: any = [];
-  let node;
-  const s = context.source;
-  if (s.startsWith("{{")) {
-    // 解析{{ }}插入值并返回ast
-    node = parseInterpolation(context);
-  } else if (s[0] === "<") {
-    // 如果第一个字符是<,说明是一个标签
-    if (/[a-z]/i.test(s[1])) {
-      // console.log("parse element");
-      node = parseElement(context);
-    }
-  }
 
-  if (!node) {
-    console.log("parse text");
-    node = parseText(context);
+  // feat3:循环去解析子内部的chidren
+  // 判断是否结束，没有结束就死循环下去
+  while (!isEnd(context, ancestors)) {
+    let node;
+    const s = context.source;
+    if (s.startsWith("{{")) {
+      // 解析{{ }}插入值并返回ast
+      node = parseInterpolation(context);
+    } else if (s[0] === "<") {
+      // 如果第一个字符是<,说明是一个标签
+      if (/[a-z]/i.test(s[1])) {
+        // console.log("parse element");
+        node = parseElement(context, ancestors);
+      }
+    }
+
+    if (!node) {
+      console.log("parse text");
+      node = parseText(context);
+    }
+    // 推入node
+    nodes.push(node);
   }
-  // 推入node
-  nodes.push(node);
   // 返回ast树
   return nodes;
 }
 
+// feat4:判断是否循环解析
+function isEnd(context, ancestors) {
+  const s = context.source;
+  // 2.当遇到结束标签的时候,该结束解析了
+  if (s.startsWith("</")) {
+    // 遍历 ancestors
+    for (let i = 0; i < ancestors.length; i++) {
+      // 获取ancestors栈中的tag
+      const tag = ancestors[i].tag;
+      // 如果当前的标签命中ancestors中的tag说明该结束循环了
+      if (s.slice(2, 2 + tag.length) === tag) {
+        return true;
+      }
+    }
+  }
+
+  // if (parentTag && s.startsWith(`</${parentTag}>`)) {
+  //   return true;
+  // }
+
+  // 1.source有值的时候,说明isEnd应该是false，不能停止继续解析
+  return !s;
+}
+
 function parseText(context: any) {
+  // feat2:判断截取之后的内容是否会遇到{{，如果遇到花括号就要停止截取，转而解析双花括号
+  let endIndex = context.source.length;
+  //  feat5:不止是{{,也可能遇到<标签,所以便利去查找
+  let endTokens = ["{{", "<"];
+  for (let i = 0; i < endTokens.length; i++) {
+    const index = context.source.indexOf(endTokens[i]);
+    // 指针尽可能的靠左停止
+    if (index !== -1 && endIndex > index) {
+      endIndex = index;
+    }
+  }
+
+  // 判断当前字符串是否包含{{，找到就可以给endIndex赋值，截取到这个index即可
+
   // 1. 获取content
-  const content = parseTextData(context, context.source.length);
   // 推进清空所有 source
-  console.log("-----", context.source);
+  const content = parseTextData(context, endIndex);
+
+  console.log("content -------", content);
 
   return {
     type: NodeTypes.TEXT,
@@ -60,12 +105,27 @@ function parseTextData(context: any, length) {
 }
 
 // 解析Element
-function parseElement(context: any) {
+function parseElement(context: any, ancestors) {
   // Implement
   // 1. 解析tag
-  const element = parseTag(context, TagType.Start);
+  const element: any = parseTag(context, TagType.Start);
+  // 收集element推入ancestors栈中
+  ancestors.push(element);
+  // feat1:这边要开始解析children内容了
+  element.children = parseChildren(context, ancestors);
+  // ancestors栈中弹出element
+  ancestors.pop();
 
-  parseTag(context, TagType.End);
+  console.log("----", element.tag);
+  console.log("----", context.source);
+
+  if (context.source.slice(2, 2 + element.tag.length) === element.tag) {
+    parseTag(context, TagType.End);
+  } else {
+    throw new Error(`缺少结束标签：${element.tag}`);
+  }
+
+  // 解析标签生成ast树
   // console.log("-------", context.source);
   return element;
 }
