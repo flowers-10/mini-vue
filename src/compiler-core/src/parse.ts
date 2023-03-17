@@ -52,11 +52,11 @@ function isEnd(context, ancestors) {
   // 2.当遇到结束标签的时候,该结束解析了
   if (s.startsWith("</")) {
     // 遍历 ancestors
-    for (let i = 0; i < ancestors.length; i++) {
+    for (let i = ancestors.length - 1; i >= 0; --i) {
       // 获取ancestors栈中的tag
       const tag = ancestors[i].tag;
-      // 如果当前的标签命中ancestors中的tag说明该结束循环了
-      if (s.slice(2, 2 + tag.length) === tag) {
+      // 如果当前的标签值，命中ancestors中的tag说明该结束循环了
+      if (startsWithEndTagOpen(s, tag)) {
         return true;
       }
     }
@@ -118,8 +118,8 @@ function parseElement(context: any, ancestors) {
 
   console.log("----", element.tag);
   console.log("----", context.source);
-
-  if (context.source.slice(2, 2 + element.tag.length) === element.tag) {
+  // 如果对比的标签和当前的标签相同就解析Tag否则就报错
+  if (startsWithEndTagOpen(context.source, element.tag)) {
     parseTag(context, TagType.End);
   } else {
     throw new Error(`缺少结束标签：${element.tag}`);
@@ -128,6 +128,13 @@ function parseElement(context: any, ancestors) {
   // 解析标签生成ast树
   // console.log("-------", context.source);
   return element;
+}
+
+function startsWithEndTagOpen(source, tag) {
+  return (
+    source.startsWith("</") &&
+    source.slice(2, 2 + tag.length).toLowerCase() === tag
+  );
 }
 
 // 解析标签生成ast树

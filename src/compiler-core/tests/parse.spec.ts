@@ -95,6 +95,4 @@ describe("Parse", () => {
       baseParse("<div><span></div>")
     }).toThrow("缺少结束标签：span")
   })
-
-
 });
