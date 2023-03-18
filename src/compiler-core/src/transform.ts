@@ -15,20 +15,24 @@ function createTransformContext(root, options) {
 
 function traverseNode(node, context) {
   // 1.element
-  const nodeTransforms  = context.nodeTransforms;
+  const nodeTransforms = context.nodeTransforms;
   for (let i = 0; i < nodeTransforms.length; i++) {
-    const transform = nodeTransforms[i]
-    transform(node)
+    const transform = nodeTransforms[i];
+    transform(node);
   }
 
   console.log(node);
 
+  traversChildren(node, context);
+}
+
+function traversChildren(node, context) {
   const children = node.children;
 
   if (children) {
     for (let i = 0; i < children.length; i++) {
       const node = children[i];
-      traverseNode(node,context);
+      traverseNode(node, context);
     }
   }
 }
