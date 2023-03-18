@@ -36,7 +36,7 @@ function parseChildren(context, ancestors) {
     }
 
     if (!node) {
-      console.log("parse text");
+      // console.log("parse text");
       node = parseText(context);
     }
     // 推入node
@@ -89,7 +89,7 @@ function parseText(context: any) {
   // 推进清空所有 source
   const content = parseTextData(context, endIndex);
 
-  console.log("content -------", content);
+  // console.log("content -------", content);
 
   return {
     type: NodeTypes.TEXT,
@@ -116,8 +116,8 @@ function parseElement(context: any, ancestors) {
   // ancestors栈中弹出element
   ancestors.pop();
 
-  console.log("----", element.tag);
-  console.log("----", context.source);
+  // console.log("----", element.tag);
+  // console.log("----", context.source);
   // 如果对比的标签和当前的标签相同就解析Tag否则就报错
   if (startsWithEndTagOpen(context.source, element.tag)) {
     parseTag(context, TagType.End);
