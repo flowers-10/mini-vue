@@ -1,10 +1,14 @@
-export function transform(root, options ={}) {
+import { NodeTypes } from "./ast";
+
+export function transform(root, options = {}) {
   const context = createTransformContext(root, options);
   // 1.遍历 - 深度优先搜索
   traverseNode(root, context);
   // 2.修改 text content
   createRootCodegen(root);
   //   root.codegenNode
+
+  root.helpers = [...context.helpers.keys()];
 }
 
 function createRootCodegen(root) {
@@ -15,6 +19,10 @@ function createTransformContext(root, options) {
   const context = {
     root,
     nodeTransforms: options.nodeTransforms || [],
+    helpers: new Map(),
+    helper(key) {
+      context.helpers.set(key, 1);
+    },
   };
   return context;
 }
@@ -27,7 +35,14 @@ function traverseNode(node, context) {
     transform(node);
   }
 
-  console.log(node);
+  //   console.log(node);
+  switch (node.type) {
+    case NodeTypes.INTERPOLATION:
+      context.helper("toDisplayString");
+      break;
+    default:
+      break;
+  }
 
   traversChildren(node, context);
 }
