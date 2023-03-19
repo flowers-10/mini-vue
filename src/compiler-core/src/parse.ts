@@ -196,7 +196,7 @@ function advanceBy(context, length: number) {
 
 // 创建根节点
 function createRoot(children) {
-  return { children };
+  return { children, type: NodeTypes.ROOT };
 }
 
 // 创建解析器上下文

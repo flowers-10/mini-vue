@@ -1,4 +1,5 @@
 import { NodeTypes } from "./ast";
+import { TO_DISPLAY_STRING } from "./runtimeHelpers";
 
 export function transform(root, options = {}) {
   const context = createTransformContext(root, options);
@@ -38,22 +39,22 @@ function traverseNode(node, context) {
   //   console.log(node);
   switch (node.type) {
     case NodeTypes.INTERPOLATION:
-      context.helper("toDisplayString");
+      context.helper(TO_DISPLAY_STRING);
+      break;
+    case NodeTypes.ROOT:
+    case NodeTypes.ELEMENT:
+      traversChildren(node, context);
       break;
     default:
       break;
   }
-
-  traversChildren(node, context);
 }
 
 function traversChildren(node, context) {
   const children = node.children;
 
-  if (children) {
-    for (let i = 0; i < children.length; i++) {
-      const node = children[i];
-      traverseNode(node, context);
-    }
+  for (let i = 0; i < children.length; i++) {
+    const node = children[i];
+    traverseNode(node, context);
   }
 }
