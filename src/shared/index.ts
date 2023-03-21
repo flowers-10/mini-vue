@@ -4,9 +4,12 @@ export const extend = Object.assign
 export const EMPTY_OBJ = {}
 
 // 判断是否是个对象
-export function isObject(val) {
+export const isObject =(val) =>{
   return val !== null && typeof val === 'object'
 }
+
+export const isString = (value) => typeof value === "string"
+
 
 // 判断对象是否改变
 export const hasChanged = (val, newVal) => {
