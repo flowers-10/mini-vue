@@ -43,7 +43,6 @@ function traverseNode(node, context) {
     if (onExit) exitsFns.push(onExit);
   }
 
-  //   console.log(node);
   switch (node.type) {
     case NodeTypes.INTERPOLATION:
       context.helper(TO_DISPLAY_STRING);

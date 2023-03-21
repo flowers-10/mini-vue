@@ -15,7 +15,6 @@ export function generate(ast) {
   const functionName = "render";
   const args = ["_ctx", "_cache"];
   const signature = args.join(", ");
-  console.log(ast);
 
   push(`function ${functionName}(${signature}){`);
 
@@ -93,7 +92,6 @@ function genCompoundExpression(node, context) {
 function genElement(node, context) {
   const { push, helper } = context;
   const { tag, children, props } = node;
-  console.log(children);
 
   push(`${helper(CREATE_ELEMENT_VNODE)}(`);
   genNodeList(genNullable([tag, props, children]), context);
