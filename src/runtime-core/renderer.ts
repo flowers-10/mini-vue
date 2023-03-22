@@ -451,7 +451,7 @@ export function createRenderer(options) {
         const { proxy } = instance
         // 修改：给实例添加一个subTree属性保存当前所有子虚拟节点
         // 下次更新时就可以通过实例中的subTree属性对比新的subTree属性
-        const subTree = (instance.subTree = instance.render.call(proxy))
+        const subTree = (instance.subTree = instance.render.call(proxy,proxy))
         // 初始化不存在老节点
         patch(null, subTree, container, instance, anchor)
 
@@ -472,7 +472,7 @@ export function createRenderer(options) {
 
         const { proxy } = instance
         // 本次新的虚拟节点
-        const subTree = instance.render.call(proxy)
+        const subTree = instance.render.call(proxy,proxy)
         // 上次老的虚拟节点
         const prevSubTree = instance.subTree
         instance.subTree = subTree

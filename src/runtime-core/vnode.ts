@@ -3,7 +3,11 @@ import { ShapeFlags } from '../shared/ShapeFlags'
 export const Fragment = Symbol("Fragment")
 export const Text = Symbol("Text")
 
-export function createVnode(type, props?, children?) {
+export {
+  createVNode as createElementVNode
+}
+
+export function createVNode(type, props?, children?) {
   const vnode = {
     type,//用户传入的第一个参数，组件app 包含render和setup函数
     props,//用户传入的第二个参数，组件app 内部填充的 属性
@@ -31,7 +35,7 @@ export function createVnode(type, props?, children?) {
 }
 
 export function createTextVNode(text:string) {
-  return createVnode(Text,{},text)
+  return createVNode(Text,{},text)
 }
 
 function getShapFlag(type) {
